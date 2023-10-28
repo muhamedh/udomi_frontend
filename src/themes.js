@@ -4,7 +4,7 @@ export const orangeTheme = createTheme({
     palette: {
       mode: 'light',
       primary: {
-        main: '#ff9800',
+        main: '#fa7da5',
       },
       secondary: {
         main: '#f50057',

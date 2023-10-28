@@ -19,6 +19,7 @@ import { subscribe, unsubscribe } from "./events";
 
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { orangeTheme } from "./themes";
+import { SnackbarProvider } from "notistack";
 
 function Layout() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -72,7 +73,9 @@ const root = ReactDOM.createRoot(document.getElementById("root"));
 root.render(
   <React.StrictMode>
     <ThemeProvider theme={orangeTheme}>
-      <RouterProvider router={router}></RouterProvider>
+      <SnackbarProvider>
+        <RouterProvider router={router}></RouterProvider>
+      </SnackbarProvider>
     </ThemeProvider>
   </React.StrictMode>
 );

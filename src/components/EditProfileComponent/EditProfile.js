@@ -9,19 +9,54 @@ import {
   Grow,
 } from "@mui/material";
 import { useMutation } from "@tanstack/react-query";
+import axios from "axios";
+import { Auth } from "@aws-amplify/auth";
+import { useSnackbar } from "notistack";
 
 function EditProfile(props) {
-  const { showEditProfile, addPetExited, setEditProfileExited } = props;
-  const [petName, setPetName] = useState("");
-  const [petNameError, setPetNameError] = useState(false);
-  const [petNameHelperText, setPetNameHelperText] = useState("");
+  const { showEditProfile, addPetExited, setEditProfileExited, openEditProfile } = props;
+  const [phoneNumber, setPhoneNumber] = useState("");
+  const [phoneNumberError, setPhoneNumberError] = useState(false);
+  const [phoneNumberHelperText, setPhoneNumberHelperText] = useState("");
+  const { enqueueSnackbar, closeSnackbar } = useSnackbar();
 
-  const editPetMutation = useMutation({
-    mutationFn: (formData) => console.log("mutation"),
-    onSuccess: () => {},
+  const editProfileMutation = useMutation({
+    mutationFn: async (formData) => {
+      // send a POST request to /users endpoint
+      axios.defaults.baseURL = process.env.REACT_APP_API_ENDPOINT;
+      await axios.post("/users", formData, {
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `${await Auth.currentSession().then((data) =>
+            data.getIdToken().getJwtToken()
+          )}`,
+        },
+      });
+    },
+    onSuccess: () => {
+      openEditProfile();
+      enqueueSnackbar("Uspješno ste uredili profil.", {
+        variant: "success",
+      });
+    },
+    onError: () => {
+      enqueueSnackbar("Došlo je do greške.", {
+        variant: "error",
+      });
+    },
   });
   const handleSubmit = (event) => {
     event.preventDefault();
+    if (phoneNumber === "") {
+      setPhoneNumberError(true);
+      setPhoneNumberHelperText("Broj telefona ne može biti prazan.");
+    } else {
+      setPhoneNumberError(false);
+      setPhoneNumberHelperText("");
+      editProfileMutation.mutate({
+        phoneNumber,
+      });
+    }
   };
   return (
     <Box>
@@ -36,29 +71,41 @@ function EditProfile(props) {
           maxWidth="sm"
           sx={{ boxShadow: 2, marginTop: 5, paddingBottom: 5 }}
         >
-          <form autoComplete="off" onSubmit={() => {}}>
+          <form autoComplete="off" onSubmit={handleSubmit}>
             <Grid container spacing={2}>
               <Grid item xs={12} md={12}>
-                <Box display="flex" justifyContent="center" alignItems="center">
+                <Container>
                   <Typography variant="h6">Uredi svoj profil</Typography>
-                </Box>
+                </Container>
               </Grid>
 
               <Grid item xs={12} md={6}>
-                <Box display="flex" justifyContent="center" alignItems="center">
+                <Container>
                   <TextField
-                    id="petname"
-                    label="Ime ljubimca"
+                    id="phoneNumber"
+                    label="Broj telefona"
                     variant="standard"
-                    onChange={(e) => {}}
+                    onChange={(e) => {
+                      setPhoneNumber(e.target.value);
+                    }}
+                    value={phoneNumber}
+                    error={phoneNumberError}
+                    helperText={phoneNumberHelperText}
                   />
-                </Box>
+                </Container>
               </Grid>
-
               <Grid item xs={12}>
-                <Box display="flex" justifyContent="center" alignItems="center">
-                  <Button variant="contained" type="submit"></Button>
-                </Box>
+                <Container>
+                  <Button
+                    variant="contained"
+                    type="submit"
+                    disabled={editProfileMutation.isPending ? true : false}
+                  >
+                    {editProfileMutation.isPending
+                      ? "Spašavanje u toku"
+                      : "Spasite broj telefona."}
+                  </Button>
+                </Container>
               </Grid>
             </Grid>
           </form>

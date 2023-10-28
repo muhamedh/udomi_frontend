@@ -50,11 +50,13 @@ export default function Profile() {
                 showAddPet={showAddPet}
                 editProfileExited={editProfileExited}
                 setAddPetExited={setAddPetExited}
+                openAddPet={openAddPet}
               />
               <EditProfile
                 showEditProfile={showEditProfile}
                 addPetExited={addPetExited}
                 setEditProfileExited={setEditProfileExited}
+                openEditProfile={openEditProfile}
               />
             </Grid>
             <Grid>{/** show my pets grid. */}</Grid>
