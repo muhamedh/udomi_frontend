@@ -19,6 +19,8 @@ import axios from "axios";
 import { Auth } from "@aws-amplify/auth";
 import { useSnackbar } from "notistack";
 
+import ViewPhotos from "../ViewPhotosComponent/ViewPhotos";
+
 function AddPet(props) {
   const { showAddPet, editProfileExited, setAddPetExited, openAddPet } = props;
   const [petName, setPetName] = useState("");
@@ -37,22 +39,37 @@ function AddPet(props) {
   const [shortDescriptionHelperText, setShortDescriptionHelperText] =
     useState("");
 
+  const [petFiles, setPetFiles] = useState([]); // [File, File, File, File, File
+  const [petFilesError, setPetFilesError] = useState(false);
+  const [petFilesHelperText, setPetFilesHelperText] = useState("");
+
   const { enqueueSnackbar, closeSnackbar } = useSnackbar();
   const addPetMutation = useMutation({
     mutationFn: async (formData) => {
       // send a POST request to /pets endpoint
       axios.defaults.baseURL = process.env.REACT_APP_API_ENDPOINT;
-      await axios.post("/pets", formData, {
+
+      const response = await axios.post("/pets", formData, {
         headers: {
-          "Content-Type": "application/json",
+          "Content-Type": "multipart/form-data",
           Authorization: `${await Auth.currentSession().then((data) =>
             data.getIdToken().getJwtToken()
           )}`,
         },
       });
+      // await axios.post("/pets", formData, {
+      //   headers: {
+      //     "Content-Type": "application/json",
+      //     Authorization: `${await Auth.currentSession().then((data) =>
+      //       data.getIdToken().getJwtToken()
+      //     )}`,
+      //   },
+      // });
     },
     onSuccess: () => {
       openAddPet();
+      const emptyArray = [];
+      setPetFiles(emptyArray);
       enqueueSnackbar("Uspešno ste dodali novog ljubimca", {
         variant: "success",
       });
@@ -99,12 +116,25 @@ function AddPet(props) {
     }
 
     addPetMutation.mutate({
-      petName: petName,
-      location: location,
-      vaccinatedStatus: vaccinatedStatus,
-      chippedStatus: chippedStatus,
-      shortDescription: shortDescription,
+      data: JSON.stringify({
+        petName: petName,
+        location: location,
+        vaccinatedStatus: vaccinatedStatus,
+        chippedStatus: chippedStatus,
+        shortDescription: shortDescription,
+      }),
+      images: [...petFiles],
     });
+  };
+  const handleFilesUpload = (event) => {
+    const emptyArray = [];
+    setPetFiles(emptyArray);
+    if (event.target.files.length > 5) {
+      setPetFilesError(true);
+      setPetFilesHelperText("Maksimalan broj slika je 5");
+      return;
+    }
+    setPetFiles(Array.from(event.target.files));
   };
   return (
     <Box>
@@ -216,26 +246,42 @@ function AddPet(props) {
               </Grid>
               <Grid item xs={12} md={12}>
                 <Container>
-                    <TextField
-                      id="outlined-multiline-static"
-                      label="Kratki opis ljubimca"
-                      multiline
-                      rows={4}
-                      placeholder="Unesite kartki opis o ljubimcu"
-                      onChange={(e) => setShortDescription(e.target.value)}
-                      value={shortDescription}
-                      error={shortDescriptionError}
-                      helperText={shortDescriptionHelperText}
-                      style={{ width: "100%" }}
-                    />
+                  <TextField
+                    id="outlined-multiline-static"
+                    label="Kratki opis ljubimca"
+                    multiline
+                    rows={4}
+                    placeholder="Unesite kartki opis o ljubimcu"
+                    onChange={(e) => setShortDescription(e.target.value)}
+                    value={shortDescription}
+                    error={shortDescriptionError}
+                    helperText={shortDescriptionHelperText}
+                    style={{ width: "100%" }}
+                  />
                 </Container>
               </Grid>
-              {/**
-               * Slike 5 svaka ispod 3 MB - jedna slika obavezna
-               */}
+              <Grid item xs={12} md={12}>
+                {/**
+                 * Slike 5 svaka ispod 3 MB - jedna slika obavezna
+                 */}
+
+                <ViewPhotos petFiles={petFiles} />
+                <input
+                  type="file"
+                  id="pet-image"
+                  accept="image/png, image/jpeg"
+                  multiple
+                  onChange={handleFilesUpload}
+                />
+              </Grid>
+
               <Grid item xs={12}>
                 <Box display="flex" justifyContent="center" alignItems="center">
-                  <Button variant="contained" type="submit" disabled={addPetMutation.isPending ? true : false}>
+                  <Button
+                    variant="contained"
+                    type="submit"
+                    disabled={addPetMutation.isPending ? true : false}
+                  >
                     {addPetMutation.isPending
                       ? "Dodavanje u toku..."
                       : "Dodaj ljubimca"}

@@ -11,7 +11,7 @@ import {
 import VisibilityIcon from "@mui/icons-material/Visibility";
 import { Typography } from "@mui/material";
 import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useParams } from "react-router-dom";
 import { Auth } from "@aws-amplify/auth";
 import { useMutation } from "@tanstack/react-query";
 
@@ -25,12 +25,14 @@ function ForgotPassword() {
   const [repeatNewPasswordHelperText, setRepeatNewPasswordHelperText] =
     useState("");
 
-    const [resetCode, setResetCode] = useState("");
-    const [resetCodeError, setResetCodeError] = useState(false);
-    const [resetCodeErrorHelperText, setResetCodeErrorHelperText] = useState("");
-    
+  const [resetCode, setResetCode] = useState("");
+  const [resetCodeError, setResetCodeError] = useState(false);
+  const [resetCodeErrorHelperText, setResetCodeErrorHelperText] = useState("");
+
   const [showPassword, setShowPassword] = useState(false);
   const navigate = useNavigate();
+
+  let { username } = useParams();
 
   const resetPasswordMutation = useMutation({
     mutationFn: (formData) =>
@@ -41,45 +43,57 @@ function ForgotPassword() {
       ),
     onSuccess: () => {
       console.log("success");
-      // publish("logInSuccess");
-      // localStorage.setItem("IS_AUTH", true);
-      // navigate(`/`); //TODO set app home page
+      navigate(`/auth/login`);
     },
   });
 
-  // const forgotMutation = useMutation({
-  //   mutationFn: (username) => Auth.forgotPassword(username),
-  //   onSuccess: () => {
-  //     navigate(`/auth/forgot/${username}`);
-  //   },
-  // });
-
   const handleSubmit = (event) => {
     event.preventDefault();
-    //   let preventLogin = [];
-    //   if (username.length === 0) {
-    //     setUsernameError(true);
-    //     setUsernameHelperText("This field is required.");
-    //     preventLogin.push(true);
-    //   } else {
-    //     setUsernameError(false);
-    //     setUsernameHelperText("");
-    //   }
+    let preventLogin = [];
+    if (newPassword.length === 0) {
+      setNewPasswordError(true);
+      setNewPasswordHelperText("Ovo polje je obavezno.");
+      preventLogin.push(true);
+    } else {
+      setNewPasswordError(false);
+      setNewPasswordHelperText("");
+    }
+    if (repeatNewPassword.length === 0) {
+      setRepeatNewPasswordError(true);
+      setRepeatNewPasswordHelperText("Ovo polje je obavezno.");
+      preventLogin.push(true);
+    } else {
+      setRepeatNewPasswordError(false);
+      setRepeatNewPasswordHelperText("");
+    }
 
-    //   if (password.length === 0) {
-    //     setPasswordError(true);
-    //     setPasswordHelperText("This field is required.");
-    //     preventLogin.push(true);
-    //   } else {
-    //     setPasswordError(false);
-    //     setPasswordHelperText("");
-    //     preventLogin.push(false);
-    //   }
+    if (resetCode.length === 0) {
+      setResetCodeError(true);
+      setResetCodeErrorHelperText("Ovo polje je obavezno.");
+      preventLogin.push(true);
+    } else {
+      setResetCodeError(false);
+      setResetCodeErrorHelperText("");
+    }
 
-    //   if (preventLogin.includes(true)) {
-    //     return;
-    //   }
+    if (newPassword !== repeatNewPassword) {
+      setRepeatNewPasswordError(true);
+      setRepeatNewPasswordHelperText("Šifre se ne poklapaju.");
+      preventLogin.push(true);
+    } else {
+      setRepeatNewPasswordError(false);
+      setRepeatNewPasswordHelperText("");
+    }
+    if (preventLogin.includes(true)) {
+      return;
+    }
 
+    console.log("hi");
+    resetPasswordMutation.mutate({
+      username: username,
+      code: resetCode,
+      password: newPassword,
+    });
     //   loginMutation.mutate({
     //     username: username,
     //     password: password,
@@ -99,7 +113,12 @@ function ForgotPassword() {
         <form autoComplete="off" onSubmit={handleSubmit}>
           <Grid container spacing={4}>
             <Grid item xs={12} md={12}>
-              <Box display="flex" justifyContent="center" alignItems="center">
+              <Box
+                display="flex"
+                justifyContent="center"
+                alignItems="center"
+                paddingTop={2}
+              >
                 <Typography variant="h6">
                   Kod Vam je poslan na email.
                 </Typography>
