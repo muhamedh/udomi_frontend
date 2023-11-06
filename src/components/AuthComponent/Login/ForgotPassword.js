@@ -1,4 +1,3 @@
-//TODO implement
 import {
   Container,
   TextField,
@@ -42,7 +41,6 @@ function ForgotPassword() {
         formData.password
       ),
     onSuccess: () => {
-      console.log("success");
       navigate(`/auth/login`);
     },
   });
@@ -88,16 +86,11 @@ function ForgotPassword() {
       return;
     }
 
-    console.log("hi");
     resetPasswordMutation.mutate({
       username: username,
       code: resetCode,
       password: newPassword,
     });
-    //   loginMutation.mutate({
-    //     username: username,
-    //     password: password,
-    //   });
   };
   return (
     <Box

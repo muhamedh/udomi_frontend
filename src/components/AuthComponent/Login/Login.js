@@ -32,7 +32,7 @@ function Login() {
     onSuccess: () => {
       publish("logInSuccess");
       localStorage.setItem("IS_AUTH", true);
-      navigate(`/`); //TODO set app home page
+      navigate(`/`);
     },
   });
 
