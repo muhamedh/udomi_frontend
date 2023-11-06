@@ -34,7 +34,8 @@ function ViewPhotos(props) {
                 padding: "1em 1em 0 1em",
                 objectFit: "contain",
               }}
-              image={URL.createObjectURL(file)}
+              src={typeof file === "string" ? file : null}
+              image={typeof file !== "string" ? URL.createObjectURL(file) : null}
             ></CardMedia>
           );
         })}

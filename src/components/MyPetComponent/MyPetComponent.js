@@ -1,23 +1,27 @@
-import {
-  Card,
-  CardContent,
-  Typography,
-  CardActions,
-} from "@mui/material";
+import { Card, CardContent, Typography, CardActions } from "@mui/material";
 import { Box, Grid, Button } from "@mui/material";
 import DoneIcon from "@mui/icons-material/Done";
 import CancelIcon from "@mui/icons-material/Cancel";
 
 import { green } from "@mui/material/colors";
 import { red } from "@mui/material/colors";
+import { useNavigate } from "react-router";
+import { Link } from "react-router-dom";
 
 function MyPetCard(props) {
-  const { pet, photos } = props;
+  const { pet, photos, pet_id } = props;
+  const navigate = useNavigate();
   return (
     <Grid item xs={12} md={4}>
       <Box display={"flex"} justifyContent={"center"} alignContent={"center"}>
         <Card sx={{ maxWidth: 345 }}>
-          <img src={photos[0]} alt="pet to addopt" width="340" height="240" style={{"objectFit": "cover"}}/>
+          <img
+            src={photos[0]}
+            alt="pet to addopt"
+            width="340"
+            height="240"
+            style={{ objectFit: "cover" }}
+          />
           <CardContent>
             <Typography gutterBottom variant="h5" component="div">
               {pet.M.petName.S}
@@ -50,7 +54,13 @@ function MyPetCard(props) {
             </Box>
           </CardContent>
           <CardActions>
-            <Button size="small">Uredi ljubimca</Button>
+            <Button
+              onClick={()=>{
+                navigate("/profile/pet/edit", {
+                  state: { pet: pet, photos: photos, pet_id: pet_id },
+                });
+              }}
+            >Uredi ljubimca</Button>
           </CardActions>
         </Card>
       </Box>
