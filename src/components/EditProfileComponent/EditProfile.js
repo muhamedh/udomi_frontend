@@ -14,7 +14,12 @@ import { Auth } from "@aws-amplify/auth";
 import { useSnackbar } from "notistack";
 
 function EditProfile(props) {
-  const { showEditProfile, addPetExited, setEditProfileExited, openEditProfile } = props;
+  const {
+    showEditProfile,
+    addPetExited,
+    setEditProfileExited,
+    openEditProfile,
+  } = props;
   const [phoneNumber, setPhoneNumber] = useState("");
   const [phoneNumberError, setPhoneNumberError] = useState(false);
   const [phoneNumberHelperText, setPhoneNumberHelperText] = useState("");
@@ -96,15 +101,25 @@ function EditProfile(props) {
               </Grid>
               <Grid item xs={12}>
                 <Container>
-                  <Button
-                    variant="contained"
-                    type="submit"
-                    disabled={editProfileMutation.isPending ? true : false}
-                  >
-                    {editProfileMutation.isPending
-                      ? "Spašavanje u toku"
-                      : "Spasite broj telefona."}
-                  </Button>
+                  <Box display={"flex"} justifyContent={"space-around"}>
+                    <Button
+                      variant="contained"
+                      type="submit"
+                      disabled={editProfileMutation.isPending ? true : false}
+                    >
+                      {editProfileMutation.isPending
+                        ? "Spašavanje u toku"
+                        : "Spasite broj telefona."}
+                    </Button>
+                    <Button
+                      variant="contained"
+                      disabled={editProfileMutation.isPending ? true : false}
+                      color="error"
+                      onClick={() => openEditProfile()}
+                    >
+                      Odustani
+                    </Button>
+                  </Box>
                 </Container>
               </Grid>
             </Grid>

@@ -1,5 +1,6 @@
 import Register from "./Register/Register";
 import Login from "./Login/Login";
+import ForgotPassword from "./Login/ForgotPassword";
 import { Auth } from "@aws-amplify/auth";
 import { Route, Routes } from "react-router-dom";
 import ConfirmRegister from "./Register/ConfirmRegister";
@@ -41,7 +42,7 @@ function AuthComponent() {
           <Route path="/register" element={<Register />}></Route>
           <Route path="/login" element={<Login />}></Route>
           <Route path="/confirm/:username" element={<ConfirmRegister />}></Route>
-          
+          <Route path="/forgot/:username" element={<ForgotPassword />}></Route>
         </Routes>
       </QueryClientProvider>
     </>

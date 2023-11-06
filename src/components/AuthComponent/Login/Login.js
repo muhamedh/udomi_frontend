@@ -32,7 +32,7 @@ function Login() {
     onSuccess: () => {
       publish("logInSuccess");
       localStorage.setItem("IS_AUTH", true);
-      navigate(`/`); //TODO set app home page
+      navigate(`/`);
     },
   });
 
@@ -88,7 +88,7 @@ function Login() {
         <form autoComplete="off" onSubmit={handleSubmit}>
           <Grid container spacing={2}>
             <Grid item xs={12} md={12}>
-              <Box display="flex" justifyContent="center" alignItems="center">
+              <Box display="flex" justifyContent="center" alignItems="center" paddingTop={2}>
                 <Typography variant="h6">Login into your account</Typography>
               </Box>
             </Grid>
