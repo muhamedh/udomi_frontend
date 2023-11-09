@@ -9,9 +9,10 @@ import { Outlet } from "react-router-dom";
 import Root from "./routes/root";
 import ErrorPage from "./routes/error-page";
 import Profile from "./routes/profile";
-
+import { EditPet } from "./components/EditPetComponent/EditPet";
 import Navbar from "./components/NavbarComponent/Navbar";
 import AuthComponent from "./components/AuthComponent/Auth";
+import { MyPets } from "./components/MyPetsComponent/MyPets";
 
 import { ThemeProvider, Toolbar } from "@mui/material";
 
@@ -57,8 +58,27 @@ const router = createBrowserRouter([
         element: (
           <QueryClientProvider client={profileClient}>
             <Profile />
+            <Outlet />
           </QueryClientProvider>
         ),
+        children: [
+          {
+            path: "",
+            element: (
+              <QueryClientProvider client={profileClient}>
+                <MyPets />
+              </QueryClientProvider>
+            ),
+          },
+          {
+            path: "pet/edit",
+            element: (
+              <QueryClientProvider client={profileClient}>
+                <EditPet />
+              </QueryClientProvider>
+            ),
+          },
+        ],
       },
       {
         path: "/auth/*",

@@ -1,97 +1,73 @@
 import { useState, useRef } from "react";
+import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
+import axios from "axios";
+import { Auth } from "@aws-amplify/auth";
+import { useNavigate, useLocation } from "react-router";
+
 import {
-  Box,
   Container,
-  Grid,
-  Button,
-  Typography,
-  TextField,
-  Grow,
-  FormControl,
-  FormLabel,
-  RadioGroup,
   FormControlLabel,
   Radio,
+  Grid,
+  TextField,
+  Button,
+  Box,
+  Grow,
+  Typography,
+  FormControl,
+  RadioGroup,
+  FormLabel,
   InputLabel,
   Select,
   MenuItem,
 } from "@mui/material";
-
-import { useMutation } from "@tanstack/react-query";
-import axios from "axios";
-import { Auth } from "@aws-amplify/auth";
-import { useSnackbar } from "notistack";
-import { useQuery } from "@tanstack/react-query";
-
 import ViewPhotos from "../ViewPhotosComponent/ViewPhotos";
-
+import { useSnackbar } from "notistack";
 import { fetchLocations } from "../../helpers/fetchLocations";
 
-function AddPet(props) {
-  const { showAddPet, editProfileExited, setAddPetExited, openAddPet, client } =
-    props;
-  const [petName, setPetName] = useState("");
+export const EditPet = () => {
+  const { state } = useLocation();
+  const hiddenFilesUpload = useRef(null);
+  const { enqueueSnackbar, closeSnackbar } = useSnackbar();
+  const [petName, setPetName] = useState(state.pet.M.petName.S);
   const [petNameError, setPetNameError] = useState(false);
   const [petNameHelperText, setPetNameHelperText] = useState("");
 
-  const [location, setLocation] = useState("Ostalo");
+  const [location, setLocation] = useState(state.location);
 
-  const [vaccinatedStatus, setVaccinatedStatus] = useState("NOT_VACCINATED");
-  const [chippedStatus, setChippedStatus] = useState("NOT_CHIPPED");
+  const [vaccinatedStatus, setVaccinatedStatus] = useState(
+    state.pet.M.vaccinatedStatus.S
+  );
+  const [chippedStatus, setChippedStatus] = useState(
+    state.pet.M.chippedStatus.S
+  );
 
-  const [shortDescription, setShortDescription] = useState("");
+  const [shortDescription, setShortDescription] = useState(
+    state.pet.M.shortDescription.S
+  );
   const [shortDescriptionError, setShortDescriptionError] = useState(false);
   const [shortDescriptionHelperText, setShortDescriptionHelperText] =
     useState("");
 
-  const [petFiles, setPetFiles] = useState([]);
+  const [petFiles, setPetFiles] = useState([...state.photos]);
   const [petFilesError, setPetFilesError] = useState(false);
   const [petFilesHelperText, setPetFilesHelperText] = useState("");
 
-  const hiddenFilesUpload = useRef(null);
+  const [filesChanged, setFilesChanged] = useState(false);
 
-  const { enqueueSnackbar, closeSnackbar } = useSnackbar();
+  const navigate = useNavigate();
+  const queryClient = useQueryClient();
 
   const { data, status } = useQuery({
-    queryKey: ["addPetLocations"],
+    queryKey: ["editPetLocations"],
     queryFn: fetchLocations,
     refetchOnWindowFocus: false,
     cacheTime: Infinity,
     staleTime: Infinity,
     retry: 2,
   });
-
-  const addPetMutation = useMutation({
-    mutationFn: async (formData) => {
-      // send a POST request to /pets endpoint
-      axios.defaults.baseURL = process.env.REACT_APP_API_ENDPOINT;
-      console.log(formData);
-      const response = await axios.post("/pets", formData, {
-        headers: {
-          "Content-Type": "multipart/form-data",
-          Authorization: `${await Auth.currentSession().then((data) =>
-            data.getIdToken().getJwtToken()
-          )}`,
-        },
-      });
-    },
-    onSuccess: () => {
-      openAddPet();
-      const emptyArray = [];
-      setPetFiles(emptyArray);
-      client.invalidateQueries({ queryKey: ["myPetsKey"] });
-      enqueueSnackbar("Uspešno ste dodali novog ljubimca", {
-        variant: "success",
-      });
-    },
-    onError: () => {
-      enqueueSnackbar("Došlo je do greške.", {
-        variant: "error",
-      });
-    },
-  });
-  const handleSubmit = (event) => {
-    event.preventDefault();
+  const handleSubmit = (e) => {
+    e.preventDefault();
     let shouldSubmit = [];
     if (petName === "") {
       setPetNameError(true);
@@ -137,18 +113,50 @@ function AddPet(props) {
     if (shouldSubmit.includes(false)) {
       return;
     }
-
-    addPetMutation.mutate({
+    // if pictures haven't changed, send only pet data
+    const sendData = {
       data: JSON.stringify({
         petName: petName,
         location: location,
         vaccinatedStatus: vaccinatedStatus,
         chippedStatus: chippedStatus,
         shortDescription: shortDescription,
+        pet_id: state.pet_id,
       }),
-      images: [...petFiles],
-    });
+    };
+    if (filesChanged === true) {
+      sendData.images = [...petFiles];
+    }
+    editPetMutation.mutate(sendData);
   };
+  const editPetMutation = useMutation({
+    mutationFn: async (formData) => {
+      // send a PUT request to /pets endpoint
+      axios.defaults.baseURL = process.env.REACT_APP_API_ENDPOINT;
+      const response = await axios.put("/pets", formData, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+          Authorization: `${await Auth.currentSession().then((data) =>
+            data.getIdToken().getJwtToken()
+          )}`,
+        },
+      });
+    },
+    onSuccess: () => {
+      const emptyArray = [];
+      setPetFiles(emptyArray);
+      navigate(-1);
+      queryClient.invalidateQueries({ queryKey: ["myPetsKey"] });
+      enqueueSnackbar("Uspešno ste uredili svog ljubimca", {
+        variant: "success",
+      });
+    },
+    onError: () => {
+      enqueueSnackbar("Došlo je do greške.", {
+        variant: "error",
+      });
+    },
+  });
   const handleFilesUpload = (event) => {
     const emptyArray = [];
     setPetFiles(emptyArray);
@@ -157,26 +165,21 @@ function AddPet(props) {
       setPetFilesHelperText("Maksimalan broj slika je 5");
       return;
     }
+    setFilesChanged(true);
     setPetFiles(Array.from(event.target.files));
   };
   return (
     <Box>
-      <Grow
-        in={showAddPet && editProfileExited}
-        onExited={() => {
-          setAddPetExited(true);
-        }}
-        unmountOnExit
-      >
+      <Grow in={true} unmountOnExit>
         <Container
           maxWidth="sm"
-          sx={{ boxShadow: 2, marginTop: 5, paddingBottom: 5 }}
+          sx={{ boxShadow: 2, marginTop: 2, paddingBottom: 5 }}
         >
           <form autoComplete="off" onSubmit={handleSubmit}>
             <Grid container spacing={2}>
               <Grid item xs={12} md={12}>
                 <Box display="flex" justifyContent="center" alignItems="center">
-                  <Typography variant="h6">Dodaj novog ljubimca</Typography>
+                  <Typography variant="h6">Uredi ljubimca</Typography>
                 </Box>
               </Grid>
 
@@ -206,15 +209,13 @@ function AddPet(props) {
                     autoWidth
                     label="Lokacija"
                   >
-                    {data ? (
-                      data.map((location) => {
-                        return (
-                          <MenuItem key = {location[1]} value={location[1]}>{location[1]}</MenuItem>
-                        );
-                      })
-                    ) : (
-                      <></>
-                    )}
+                    {data.map((location) => {
+                      return (
+                        <MenuItem key={location[1]} value={location[1]}>
+                          {location[1]}
+                        </MenuItem>
+                      );
+                    })}
                   </Select>
                 </FormControl>
               </Grid>
@@ -307,7 +308,7 @@ function AddPet(props) {
                       hiddenFilesUpload.current.click();
                     }}
                   >
-                    {petFilesError ? petFilesHelperText : "Dodaj slike"}
+                    {petFilesError ? petFilesHelperText : "Promjeni slike"}
                   </Button>
                   <input
                     type="file"
@@ -331,17 +332,19 @@ function AddPet(props) {
                   <Button
                     variant="contained"
                     type="submit"
-                    disabled={addPetMutation.isPending ? true : false}
+                    disabled={editPetMutation.isPending ? true : false}
                   >
-                    {addPetMutation.isPending
-                      ? "Dodavanje u toku..."
-                      : "Dodaj ljubimca"}
+                    {editPetMutation.isPending
+                      ? "Uređivanje u toku..."
+                      : "Uredi ljubimca"}
                   </Button>
                   <Button
                     variant="contained"
-                    disabled={addPetMutation.isPending ? true : false}
+                    disabled={editPetMutation.isPending ? true : false}
                     color="error"
-                    onClick={() => openAddPet()}
+                    onClick={() => {
+                      navigate(-1);
+                    }}
                   >
                     Odustani
                   </Button>
@@ -353,6 +356,4 @@ function AddPet(props) {
       </Grow>
     </Box>
   );
-}
-
-export default AddPet;
+};
