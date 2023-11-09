@@ -12,24 +12,29 @@ import {
   RadioGroup,
   FormControlLabel,
   Radio,
+  InputLabel,
+  Select,
+  MenuItem,
 } from "@mui/material";
 
 import { useMutation } from "@tanstack/react-query";
 import axios from "axios";
 import { Auth } from "@aws-amplify/auth";
 import { useSnackbar } from "notistack";
+import { useQuery } from "@tanstack/react-query";
 
 import ViewPhotos from "../ViewPhotosComponent/ViewPhotos";
 
+import { fetchLocations } from "../../helpers/fetchLocations";
+
 function AddPet(props) {
-  const { showAddPet, editProfileExited, setAddPetExited, openAddPet, client } = props;
+  const { showAddPet, editProfileExited, setAddPetExited, openAddPet, client } =
+    props;
   const [petName, setPetName] = useState("");
   const [petNameError, setPetNameError] = useState(false);
   const [petNameHelperText, setPetNameHelperText] = useState("");
 
-  const [location, setLocation] = useState("");
-  const [locationError, setLocationError] = useState(false);
-  const [locationHelperText, setLocationHelperText] = useState("");
+  const [location, setLocation] = useState("Ostalo");
 
   const [vaccinatedStatus, setVaccinatedStatus] = useState("NOT_VACCINATED");
   const [chippedStatus, setChippedStatus] = useState("NOT_CHIPPED");
@@ -46,6 +51,16 @@ function AddPet(props) {
   const hiddenFilesUpload = useRef(null);
 
   const { enqueueSnackbar, closeSnackbar } = useSnackbar();
+
+  const { data, status } = useQuery({
+    queryKey: ["addPetLocations"],
+    queryFn: fetchLocations,
+    refetchOnWindowFocus: false,
+    cacheTime: Infinity,
+    staleTime: Infinity,
+    retry: 2,
+  });
+
   const addPetMutation = useMutation({
     mutationFn: async (formData) => {
       // send a POST request to /pets endpoint
@@ -64,7 +79,7 @@ function AddPet(props) {
       openAddPet();
       const emptyArray = [];
       setPetFiles(emptyArray);
-      client.invalidateQueries({ queryKey: ["myPetsKey"]})
+      client.invalidateQueries({ queryKey: ["myPetsKey"] });
       enqueueSnackbar("Uspešno ste dodali novog ljubimca", {
         variant: "success",
       });
@@ -85,14 +100,6 @@ function AddPet(props) {
     } else {
       setPetNameError(false);
       setPetNameHelperText("");
-    }
-    if (location === "") {
-      setLocationError(true);
-      setLocationHelperText("Polje ne može biti prazno");
-      shouldSubmit.push(false);
-    } else {
-      setLocationError(false);
-      setLocationHelperText("");
     }
 
     if (shortDescription === "") {
@@ -187,17 +194,29 @@ function AddPet(props) {
                 </Container>
               </Grid>
               <Grid item xs={12} md={6}>
-                <Container>
-                  <TextField
-                    id="location"
-                    label="Lokacija"
-                    variant="standard"
-                    onChange={(e) => setLocation(e.target.value)}
+                <FormControl sx={{ m: 1, minWidth: 120 }}>
+                  <InputLabel id="lokacija-input-label">Lokacija</InputLabel>
+                  <Select
+                    labelId="lokacija-input-label"
+                    id="lokacija-select"
                     value={location}
-                    error={locationError}
-                    helperText={locationHelperText}
-                  />
-                </Container>
+                    onChange={(event) => {
+                      setLocation(event.target.value);
+                    }}
+                    autoWidth
+                    label="Lokacija"
+                  >
+                    {data ? (
+                      data.map((location) => {
+                        return (
+                          <MenuItem key = {location[1]} value={location[1]}>{location[1]}</MenuItem>
+                        );
+                      })
+                    ) : (
+                      <></>
+                    )}
+                  </Select>
+                </FormControl>
               </Grid>
               <Grid item xs={12} md={6}>
                 <Container>

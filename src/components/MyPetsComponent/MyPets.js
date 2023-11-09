@@ -56,6 +56,7 @@ export const MyPets = () => {
               pet={pet.data}
               photos={pet.photos}
               pet_id={pet.pet_id.S}
+              location={pet.location.S}
             />
           );
         })

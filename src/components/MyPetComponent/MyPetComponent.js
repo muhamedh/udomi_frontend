@@ -6,10 +6,9 @@ import CancelIcon from "@mui/icons-material/Cancel";
 import { green } from "@mui/material/colors";
 import { red } from "@mui/material/colors";
 import { useNavigate } from "react-router";
-import { Link } from "react-router-dom";
 
 function MyPetCard(props) {
-  const { pet, photos, pet_id } = props;
+  const { pet, photos, pet_id, location } = props;
   const navigate = useNavigate();
   return (
     <Grid item xs={12} md={4}>
@@ -30,7 +29,7 @@ function MyPetCard(props) {
               {pet.M.shortDescription.S}
             </Typography>
             <Typography variant="body2" color="text.secondary" marginBottom={2}>
-              Lokacija: {pet.M.location.S}
+              Lokacija: {location}
             </Typography>
             <Box display={"flex"} alignItems={"center"} marginBottom={2}>
               <Typography variant="body2" color="text.secondary">
@@ -57,7 +56,7 @@ function MyPetCard(props) {
             <Button
               onClick={()=>{
                 navigate("/profile/pet/edit", {
-                  state: { pet: pet, photos: photos, pet_id: pet_id },
+                  state: { pet: pet, photos: photos, pet_id: pet_id, location: location },
                 });
               }}
             >Uredi ljubimca</Button>

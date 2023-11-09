@@ -1,8 +1,8 @@
 import { useState, useRef } from "react";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
 import axios from "axios";
-import Auth from "@aws-amplify/auth";
-import { useSnackbar } from "notistack";
+import { Auth } from "@aws-amplify/auth";
+import { useNavigate, useLocation } from "react-router";
 
 import {
   Container,
@@ -17,10 +17,14 @@ import {
   FormControl,
   RadioGroup,
   FormLabel,
+  InputLabel,
+  Select,
+  MenuItem,
 } from "@mui/material";
 import ViewPhotos from "../ViewPhotosComponent/ViewPhotos";
+import { useSnackbar } from "notistack";
+import { fetchLocations } from "../../helpers/fetchLocations";
 
-import { useLocation } from "react-router";
 export const EditPet = () => {
   const { state } = useLocation();
   const hiddenFilesUpload = useRef(null);
@@ -29,14 +33,18 @@ export const EditPet = () => {
   const [petNameError, setPetNameError] = useState(false);
   const [petNameHelperText, setPetNameHelperText] = useState("");
 
-  const [location, setLocation] = useState(state.pet.M.location.S);
-  const [locationError, setLocationError] = useState(false);
-  const [locationHelperText, setLocationHelperText] = useState("");
+  const [location, setLocation] = useState(state.location);
 
-  const [vaccinatedStatus, setVaccinatedStatus] = useState(state.pet.M.vaccinatedStatus.S);
-  const [chippedStatus, setChippedStatus] = useState(state.pet.M.chippedStatus.S);
+  const [vaccinatedStatus, setVaccinatedStatus] = useState(
+    state.pet.M.vaccinatedStatus.S
+  );
+  const [chippedStatus, setChippedStatus] = useState(
+    state.pet.M.chippedStatus.S
+  );
 
-  const [shortDescription, setShortDescription] = useState(state.pet.M.shortDescription.S);
+  const [shortDescription, setShortDescription] = useState(
+    state.pet.M.shortDescription.S
+  );
   const [shortDescriptionError, setShortDescriptionError] = useState(false);
   const [shortDescriptionHelperText, setShortDescriptionHelperText] =
     useState("");
@@ -45,16 +53,87 @@ export const EditPet = () => {
   const [petFilesError, setPetFilesError] = useState(false);
   const [petFilesHelperText, setPetFilesHelperText] = useState("");
 
+  const [filesChanged, setFilesChanged] = useState(false);
+
+  const navigate = useNavigate();
+  const queryClient = useQueryClient();
+
+  const { data, status } = useQuery({
+    queryKey: ["editPetLocations"],
+    queryFn: fetchLocations,
+    refetchOnWindowFocus: false,
+    cacheTime: Infinity,
+    staleTime: Infinity,
+    retry: 2,
+  });
   const handleSubmit = (e) => {
     e.preventDefault();
-    console.log("submit");
+    let shouldSubmit = [];
+    if (petName === "") {
+      setPetNameError(true);
+      setPetNameHelperText("Polje ne može biti prazno");
+      shouldSubmit.push(false);
+    } else {
+      setPetNameError(false);
+      setPetNameHelperText("");
+    }
+
+    if (shortDescription === "") {
+      setShortDescriptionError(true);
+      setShortDescriptionHelperText("Polje ne može biti prazno");
+      shouldSubmit.push(false);
+    } else {
+      setShortDescriptionError(false);
+      setShortDescriptionHelperText("");
+    }
+
+    if (petFiles.length === 0) {
+      setPetFilesError(true);
+      setPetFilesHelperText("Morate dodati bar jednu sliku");
+      shouldSubmit.push(false);
+    } else {
+      setPetFilesError(false);
+      setPetFilesHelperText("");
+    }
+
+    if (petFiles.length > 5) {
+      setPetFilesError(true);
+      setPetFilesHelperText("Maksimalan broj slika je 5");
+      shouldSubmit.push(false);
+    }
+    for (let i = 0; i < petFiles.length; i++) {
+      if (petFiles[i].size > 3000000) {
+        setPetFilesError(true);
+        setPetFilesHelperText("Maksimalna veličina slike je 3 MB");
+        shouldSubmit.push(false);
+        break;
+      }
+    }
+
+    if (shouldSubmit.includes(false)) {
+      return;
+    }
+    // if pictures haven't changed, send only pet data
+    const sendData = {
+      data: JSON.stringify({
+        petName: petName,
+        location: location,
+        vaccinatedStatus: vaccinatedStatus,
+        chippedStatus: chippedStatus,
+        shortDescription: shortDescription,
+        pet_id: state.pet_id,
+      }),
+    };
+    if (filesChanged === true) {
+      sendData.images = [...petFiles];
+    }
+    editPetMutation.mutate(sendData);
   };
-  const addPetMutation = useMutation({
+  const editPetMutation = useMutation({
     mutationFn: async (formData) => {
-      // send a POST request to /pets endpoint
+      // send a PUT request to /pets endpoint
       axios.defaults.baseURL = process.env.REACT_APP_API_ENDPOINT;
-      console.log(formData);
-      const response = await axios.post("/pets", formData, {
+      const response = await axios.put("/pets", formData, {
         headers: {
           "Content-Type": "multipart/form-data",
           Authorization: `${await Auth.currentSession().then((data) =>
@@ -66,8 +145,9 @@ export const EditPet = () => {
     onSuccess: () => {
       const emptyArray = [];
       setPetFiles(emptyArray);
-      //client.invalidateQueries({ queryKey: ["myPetsKey"]})
-      enqueueSnackbar("Uspešno ste dodali novog ljubimca", {
+      navigate(-1);
+      queryClient.invalidateQueries({ queryKey: ["myPetsKey"] });
+      enqueueSnackbar("Uspešno ste uredili svog ljubimca", {
         variant: "success",
       });
     },
@@ -85,6 +165,7 @@ export const EditPet = () => {
       setPetFilesHelperText("Maksimalan broj slika je 5");
       return;
     }
+    setFilesChanged(true);
     setPetFiles(Array.from(event.target.files));
   };
   return (
@@ -116,17 +197,27 @@ export const EditPet = () => {
                 </Container>
               </Grid>
               <Grid item xs={12} md={6}>
-                <Container>
-                  <TextField
-                    id="location"
-                    label="Lokacija"
-                    variant="standard"
-                    onChange={(e) => setLocation(e.target.value)}
+                <FormControl sx={{ m: 1, minWidth: 120 }}>
+                  <InputLabel id="lokacija-input-label">Lokacija</InputLabel>
+                  <Select
+                    labelId="lokacija-input-label"
+                    id="lokacija-select"
                     value={location}
-                    error={locationError}
-                    helperText={locationHelperText}
-                  />
-                </Container>
+                    onChange={(event) => {
+                      setLocation(event.target.value);
+                    }}
+                    autoWidth
+                    label="Lokacija"
+                  >
+                    {data.map((location) => {
+                      return (
+                        <MenuItem key={location[1]} value={location[1]}>
+                          {location[1]}
+                        </MenuItem>
+                      );
+                    })}
+                  </Select>
+                </FormControl>
               </Grid>
               <Grid item xs={12} md={6}>
                 <Container>
@@ -217,7 +308,7 @@ export const EditPet = () => {
                       hiddenFilesUpload.current.click();
                     }}
                   >
-                    {petFilesError ? petFilesHelperText : "Dodaj slike"}
+                    {petFilesError ? petFilesHelperText : "Promjeni slike"}
                   </Button>
                   <input
                     type="file"
@@ -241,17 +332,19 @@ export const EditPet = () => {
                   <Button
                     variant="contained"
                     type="submit"
-                    disabled={addPetMutation.isPending ? true : false}
+                    disabled={editPetMutation.isPending ? true : false}
                   >
-                    {addPetMutation.isPending
-                      ? "Dodavanje u toku..."
-                      : "Dodaj ljubimca"}
+                    {editPetMutation.isPending
+                      ? "Uređivanje u toku..."
+                      : "Uredi ljubimca"}
                   </Button>
                   <Button
                     variant="contained"
-                    disabled={addPetMutation.isPending ? true : false}
+                    disabled={editPetMutation.isPending ? true : false}
                     color="error"
-                    onClick={() => {}}
+                    onClick={() => {
+                      navigate(-1);
+                    }}
                   >
                     Odustani
                   </Button>
