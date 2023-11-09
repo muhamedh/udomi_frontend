@@ -65,7 +65,7 @@ function AddPet(props) {
     mutationFn: async (formData) => {
       // send a POST request to /pets endpoint
       axios.defaults.baseURL = process.env.REACT_APP_API_ENDPOINT;
-      console.log(formData);
+      //console.log(formData);
       const response = await axios.post("/pets", formData, {
         headers: {
           "Content-Type": "multipart/form-data",

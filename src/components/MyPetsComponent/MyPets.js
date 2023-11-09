@@ -7,7 +7,7 @@ import MyPetCard from "../MyPetComponent/MyPetComponent";
 
 const fetchMyPets = async () => {
   axios.defaults.baseURL = process.env.REACT_APP_API_ENDPOINT;
-  console.log("Fetched my pets");
+  //console.log("Fetched my pets");
   const { data } = await axios.get("/pets/my", {
     headers: {
       "Content-Type": "application/json",

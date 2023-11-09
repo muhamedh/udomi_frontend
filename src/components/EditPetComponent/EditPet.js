@@ -28,6 +28,7 @@ import { fetchLocations } from "../../helpers/fetchLocations";
 export const EditPet = () => {
   const { state } = useLocation();
   const hiddenFilesUpload = useRef(null);
+  //console.log(state);
   const { enqueueSnackbar, closeSnackbar } = useSnackbar();
   const [petName, setPetName] = useState(state.pet.M.petName.S);
   const [petNameError, setPetNameError] = useState(false);
@@ -209,13 +210,13 @@ export const EditPet = () => {
                     autoWidth
                     label="Lokacija"
                   >
-                    {data.map((location) => {
+                    { data ? data.map((location) => {
                       return (
                         <MenuItem key={location[1]} value={location[1]}>
                           {location[1]}
                         </MenuItem>
                       );
-                    })}
+                    }): <MenuItem value={location}>{location}</MenuItem>}
                   </Select>
                 </FormControl>
               </Grid>

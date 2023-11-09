@@ -6,7 +6,7 @@ import ReactDOM from "react-dom/client";
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
 import { Outlet } from "react-router-dom";
 
-import Root from "./routes/root";
+import HomePage from "./routes/home-page";
 import ErrorPage from "./routes/error-page";
 import Profile from "./routes/profile";
 import { EditPet } from "./components/EditPetComponent/EditPet";
@@ -51,7 +51,7 @@ const router = createBrowserRouter([
     children: [
       {
         path: "/",
-        element: <Root />,
+        element: <HomePage />,
       },
       {
         path: "/profile",
@@ -91,11 +91,11 @@ const router = createBrowserRouter([
 const root = ReactDOM.createRoot(document.getElementById("root"));
 
 root.render(
-  <React.StrictMode>
+
     <ThemeProvider theme={orangeTheme}>
       <SnackbarProvider>
         <RouterProvider router={router}></RouterProvider>
       </SnackbarProvider>
     </ThemeProvider>
-  </React.StrictMode>
+
 );
